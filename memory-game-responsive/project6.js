@@ -36,14 +36,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return array;
   }
 
+  function adjustCardSize() {
+    const gridWidth = gameGrid.clientWidth;
+    const numColumns = 4;
+    const cardSize = Math.max(50, Math.min(gridWidth / numColumns - 10, 150)); // Responsive size
+
+    document.querySelectorAll(".card").forEach(card => {
+        card.style.width = `${cardSize}px`;
+        card.style.height = `${cardSize}px`;
+    });
+  }
+
   function initializeGame() {
     flippedCards = [];
     matchedPairs = 0;
     moves = 0;
     secondsElapsed = 0;
     moveCounter.textContent = moves;
-    timer.textContent = "0:00"; // Reset timer display
-    clearInterval(gameTimer); // Stop any previous timer
+    timer.textContent = "0:00"; 
+    clearInterval(gameTimer);
     gameGrid.innerHTML = "";
     gameStarted = true;
     restartButton.disabled = false;
@@ -52,13 +63,13 @@ document.addEventListener("DOMContentLoaded", () => {
     shuffle(cards).forEach(card => {
         const cardElement = document.createElement("div");
         cardElement.classList.add("card");
-        
+
         const cardInner = document.createElement("div");
         cardInner.classList.add("card-inner");
 
         const cardFront = document.createElement("div");
         cardFront.classList.add("card-front");
-        
+
         const cardBack = document.createElement("div");
         cardBack.classList.add("card-back");
 
@@ -70,16 +81,17 @@ document.addEventListener("DOMContentLoaded", () => {
         cardInner.appendChild(cardFront);
         cardInner.appendChild(cardBack);
         cardElement.appendChild(cardInner);
-        
+
         cardElement.addEventListener("click", flipCard);
         gameGrid.appendChild(cardElement);
     });
 
-    startTimer(); // Start the timer only when game starts
+    adjustCardSize(); // Adjust card size on game start
+    startTimer();
   }
 
   function startTimer() {
-    clearInterval(gameTimer); // Ensure no duplicate timers
+    clearInterval(gameTimer);
     secondsElapsed = 0;
     gameTimer = setInterval(() => {
         secondsElapsed++;
@@ -91,9 +103,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function flipCard() {
     if (!gameStarted || flippedCards.length === 2) return;
-  
+
     const card = this.querySelector('.card-inner');
-  
+
     if (!this.classList.contains("flip")) {
         this.classList.add("flip");
         flippedCards.push(this);
@@ -110,15 +122,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const [card1, card2] = flippedCards;
     const cardBack1 = card1.querySelector(".card-back");
     const cardBack2 = card2.querySelector(".card-back");
-    const fruit1 = cardBack1.querySelector("span");
-    const fruit2 = cardBack2.querySelector("span");
+    const fruit1 = cardBack1.textContent;
+    const fruit2 = cardBack2.textContent;
 
-    if (cardBack1.textContent === cardBack2.textContent) {
+    if (fruit1 === fruit2) {
         card1.classList.add("match");
         card2.classList.add("match");
-
-        fruit1.style.animation = getComputedStyle(fruit1).animation;
-        fruit2.style.animation = getComputedStyle(fruit2).animation;
 
         matchedPairs++;
         flippedCards = [];
@@ -126,7 +135,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (matchedPairs === cards.length / 2) {
             clearInterval(gameTimer);
             setTimeout(() => {
-                triggerConfetti(); // 🎊 Trigger confetti animation!
                 alert(`🎉 Congratulations! You completed the game in ${moves} moves and ${timer.textContent}.`);
             }, 500);
         }
@@ -164,6 +172,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   startButton.addEventListener("click", initializeGame);
   restartButton.addEventListener("click", initializeGame);
+
+  window.addEventListener("resize", adjustCardSize);
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -210,15 +220,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   generateFruitBorder();
   window.addEventListener("resize", generateFruitBorder);
-
-  const gameContainer = document.querySelector(".game-container");
-  const gameGrid = document.querySelector(".grid");
-  const startButton = document.getElementById("start-button");
-
-  startButton.addEventListener("click", () => {
-      gameContainer.style.width = "min(80vw, 600px)"; /* Expand Game */
-      gameContainer.style.top = "calc(50% + 20px)"; /* Move Down */
-      gameGrid.style.display = "grid"; /* Show Grid */
-      generateFruitBorder(); /* Adjust Border */
-  });
 });

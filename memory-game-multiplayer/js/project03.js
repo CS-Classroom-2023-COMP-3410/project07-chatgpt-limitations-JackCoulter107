@@ -1,5 +1,8 @@
 const gameGrid = document.getElementById("gameGrid");
 const moveCounter = document.getElementById("moveCounter");
+const player1ScoreCounter = document.getElementById("player1Score");
+const player2ScoreCounter = document.getElementById("player2Score");
+const currentPlayerDisplay = document.getElementById("currentPlayer");
 const timer = document.getElementById("timer");
 const restartBtn = document.getElementById("restartBtn");
 const startGameBtn = document.getElementById("startGameBtn");
@@ -11,10 +14,14 @@ const gameContainer = document.querySelector(".game-container");
 let cards = [];
 let flippedCards = [];
 let moves = 0;
+let player1Score = 0;
+let player2Score = 0;
+let currentPlayer = 1;
 let timerInterval = null;
 let timeElapsed = 0;
 let gridRows = 4;
 let gridCols = 4;
+let gameStarted = false; // Ensure the timer starts correctly
 
 // List of animal image filenames
 const animalImages = [
@@ -44,7 +51,6 @@ function initializeGame() {
   const totalCards = gridRows * gridCols;
   const uniquePairs = totalCards / 2;
 
-  // Select images, cycling if needed
   const selectedImages = [];
   for (let i = 0; i < uniquePairs; i++) {
     selectedImages.push(animalImages[i % animalImages.length]);
@@ -54,7 +60,7 @@ function initializeGame() {
   cards = shuffleArray(cardPairs);
   createGrid();
   resetGameInfo();
-  startTimer(); // ✅ Fix: Ensure the timer starts when the game begins
+  startTimer();
 }
 
 function shuffleArray(array) {
@@ -72,7 +78,7 @@ function createGrid() {
   cards.forEach((image) => {
     const card = document.createElement("div");
     card.className = "card";
-    card.dataset.symbol = image; // Using image filename for matching
+    card.dataset.symbol = image;
     card.innerHTML = `
       <div class="card-inner">
         <div class="card-front"></div>
@@ -95,6 +101,11 @@ function handleCardClick(e) {
     return;
   }
 
+  if (!gameStarted) {
+    gameStarted = true;
+    startTimer();
+  }
+
   flippedCards.push(clickedCard);
   clickedCard.classList.add("flipped");
 
@@ -108,29 +119,56 @@ function handleCardClick(e) {
 function checkForMatch() {
   const [card1, card2] = flippedCards;
 
-  // Compare image filenames instead of unique symbols
   if (card1.dataset.symbol === card2.dataset.symbol) {
     card1.classList.add("matched");
     card2.classList.add("matched");
     flippedCards = [];
-    
-    // Check if all cards are matched
+
+    if (currentPlayer === 1) {
+      player1Score++;
+      player1ScoreCounter.textContent = player1Score;
+    } else {
+      player2Score++;
+      player2ScoreCounter.textContent = player2Score;
+    }
+
     if (document.querySelectorAll(".card.matched").length === cards.length) {
       clearInterval(timerInterval);
-      alert(`Game completed in ${moves} moves and ${formatTime(timeElapsed)}!`);
+      declareWinner();
     }
   } else {
     setTimeout(() => {
       card1.classList.remove("flipped");
       card2.classList.remove("flipped");
       flippedCards = [];
+      switchTurn();
     }, 1000);
   }
 }
 
+function switchTurn() {
+  currentPlayer = currentPlayer === 1 ? 2 : 1;
+  currentPlayerDisplay.textContent = `Player ${currentPlayer}`;
+}
+
+function declareWinner() {
+  let winner;
+  if (player1Score > player2Score) {
+    winner = "Player 1 Wins!";
+  } else if (player2Score > player1Score) {
+    winner = "Player 2 Wins!";
+  } else {
+    winner = "It's a Tie!";
+  }
+  alert(`${winner} Final Score - Player 1: ${player1Score}, Player 2: ${player2Score}`);
+}
+
 function startTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
   timeElapsed = 0;
-  clearInterval(timerInterval); // ✅ Fix: Ensure previous timer is cleared
+  timer.textContent = "00:00";
   timerInterval = setInterval(() => {
     timeElapsed++;
     timer.textContent = formatTime(timeElapsed);
@@ -138,19 +176,28 @@ function startTimer() {
 }
 
 function formatTime(seconds) {
-  return new Date(seconds * 1000).toISOString().substr(14, 5);
+  const minutes = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
 }
 
 function resetGameInfo() {
   moves = 0;
+  player1Score = 0;
+  player2Score = 0;
+  currentPlayer = 1;
+  gameStarted = false;
   moveCounter.textContent = moves;
-  clearInterval(timerInterval); // ✅ Fix: Clear timer on game reset
+  player1ScoreCounter.textContent = player1Score;
+  player2ScoreCounter.textContent = player2Score;
+  currentPlayerDisplay.textContent = "Player 1";
+  clearInterval(timerInterval);
   timer.textContent = "00:00";
 }
 
 restartBtn.addEventListener("click", () => {
   gameContainer.classList.add("hidden");
   welcomeContainer.classList.remove("hidden");
-  clearInterval(timerInterval); // ✅ Fix: Clear the timer on restart
+  clearInterval(timerInterval);
   resetGameInfo();
 });
